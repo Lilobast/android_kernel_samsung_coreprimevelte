@@ -29,13 +29,13 @@ static int32_t _g_idx_out_write;
 int32_t _g_idx_in_read;
 
 /* get in read idx's pointer */
-inline int32_t *_cm_in_read_idx(void)
+int32_t *_cm_in_read_idx(void)
 {
 	return &_g_idx_in_read;
 }
 
 /* get in write idx's pointer(the other end modify) */
-inline int32_t *_cm_in_write_idx(void)
+int32_t *_cm_in_write_idx(void)
 {
 	cm_index_header_t *in_head = (cm_index_header_t *) in_header;
 
@@ -46,7 +46,7 @@ inline int32_t *_cm_in_write_idx(void)
 /* _cm_out_read_idx and _cm_out_write_idx are replaced
  * by _cm_get_out_write_idx and _cm_update_out_write_idx
  */
-inline int32_t *_cm_out_read_idx(void)
+int32_t *_cm_out_read_idx(void)
 {
 	cm_index_header_t *out_head = (cm_index_header_t *) out_header;
 
@@ -54,19 +54,19 @@ inline int32_t *_cm_out_read_idx(void)
 }
 
 /* get out write idx's pointer */
-inline int32_t *_cm_out_write_idx(void)
+int32_t *_cm_out_write_idx(void)
 {
 	static int32_t idx_out_write;
 
 	return &idx_out_write;
 }
 
-inline int32_t _cm_get_out_write_idx(void)
+int32_t _cm_get_out_write_idx(void)
 {
 	return _g_idx_out_write;
 }
 
-inline void _cm_update_out_write_idx(int32_t idx)
+void _cm_update_out_write_idx(int32_t idx)
 {
 	cm_index_header_t *out_head = (cm_index_header_t *) out_header;
 

@@ -243,7 +243,7 @@ static ssize_t store_scaling_governor(struct gpufreq_policy *policy, const char 
         goto err_out;
 
     /* parse input string */
-    memset(&gov_str[0], GPUFREQ_NAME_LEN, 0);
+    memset(&gov_str[0], 0, GPUFREQ_NAME_LEN);
     ret = sscanf(buf, "%15s", &gov_str[0]);
     if(ret != 1)
         goto err_out;
