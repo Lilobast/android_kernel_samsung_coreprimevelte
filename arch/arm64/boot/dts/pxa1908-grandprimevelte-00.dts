@@ -372,8 +372,8 @@
 			/* SD card */
 			sdh0: sdh@d4280000 {
 				pinctrl-names = "default", "fast";
-				pinctrl-0 = <&sdh0_pmx_func1 &sdh0_pmx_func2  &sdh0_pmx_func3 &sdh0_pmx_func4 &sdh0_pmx_func5>;
-				pinctrl-1 = <&sdh0_pmx_func1_fast &sdh0_pmx_func2_fast &sdh0_pmx_func3 &sdh0_pmx_func4 &sdh0_pmx_func5>;
+				pinctrl-0 = <&sdh0_pmx_func1 &sdh0_pmx_func2  &sdh0_pmx_func3 &sdh0_pmx_func4>;
+				pinctrl-1 = <&sdh0_pmx_func1_fast &sdh0_pmx_func2_fast &sdh0_pmx_func3 &sdh0_pmx_func4>;
 				vqmmc-supply	= <&ldo6>;
 				vmmc-supply	= <&ldo14>;
 				cd-gpios = <&gpio 11 0>;
@@ -654,13 +654,6 @@
 						GPIO11 AF0 /* GPIO92, used for sd card detect */
 					>;
 					MFP_PULL_UP;
-				};
-
-				sdh0_pmx_func5: sdh0_pmx_func5 {
-					pinctrl-single,pins = <
-						MMC1_CD AF0
-					>;
-					DS_SLOW0;PULL_UP;EDGE_NONE;LPM_NONE;
 				};
 
 				/* ds fast, no pull, no LPM */
@@ -1438,19 +1431,56 @@
 	backlight: ktd3102-bl {
 		compatible = "kinetic,backlight-ktd3102";
 		backlight-name = "panel";
-		backlight-brt-range = <
-			0	0	/* OFF */
-			5	2	/* MIN */
-			5	2	/* DIM */
-			144	16	/* DEF */
-			255	30	/* MAX */
-		>;
-		gen-panel-outdoor-mode-en;
-		backlight-brt-outdoor = <
-			255	32	/* OUTDOOR */
-		>;
 		bl-ctrl = <&gpio 97 1>;
 		bl-pwm = <&gpio 76 1>;
+
+		brt_table@0 {
+			brt-panel-id = <0x53b810>; /* for s6d78a0-boe panel */
+			backlight-brt-range = <
+				0	0	/* OFF */
+				5	2	/* MIN */
+				5	2	/* DIM */
+				144	17	/* DEF */
+				255	30	/* MAX */
+				0	0	/* HBM */
+			>;
+			gen-panel-outdoor-mode-en;
+			backlight-brt-outdoor = <
+				255	32	/* OUTDOOR */
+			>;
+		};
+
+		brt_table@1 {
+			brt-panel-id = <0x534490>; /* for hx8389c-cpt panel */
+			backlight-brt-range = <
+				0	0	/* OFF */
+				5	2	/* MIN */
+				5	2	/* DIM */
+				144	16	/* DEF */
+				255	29	/* MAX */
+				0	0	/* HBM */
+			>;
+			gen-panel-outdoor-mode-en;
+			backlight-brt-outdoor = <
+				255	32	/* OUTDOOR */
+			>;
+		};
+
+		brt_table@2 {
+			brt-panel-id = <0x286108>; /* for s6d78a0-boe6 panel */
+			backlight-brt-range = <
+				0	0	/* OFF */
+				5	2	/* MIN */
+				5	2	/* DIM */
+				144	17	/* DEF */
+				255	27	/* MAX */
+				0	0	/* HBM */
+			>;
+			gen-panel-outdoor-mode-en;
+			backlight-brt-outdoor = <
+				255	32	/* OUTDOOR */
+			>;
+		};
 	};
 
 	panel {
@@ -1537,7 +1567,7 @@
 		vccmain = <950000 800000>;
 		vm3pwr-supply = <&ldo3>;
 		antpwr-supply = <&ldo4>;
-		vccmain-supply = <&vccmain>;
+		vccmain-supply = <&buck1slp>;
 
 		pinctrl-names = "default", "poweron";
 		pinctrl-0 = <&gnss_pmx_def>;
@@ -1690,3 +1720,4 @@
 #include "88pm886_battery_grandprimevelte.dtsi"
 /include/ "mmp-dsi-panel-s6d78a0-boe-qHD-video.dtsi"
 /include/ "mmp-dsi-panel-hx8389c-cpt-qHD-video.dtsi"
+/include/ "mmp-dsi-panel-s6d78a0-boe6-qHD-video.dtsi"
