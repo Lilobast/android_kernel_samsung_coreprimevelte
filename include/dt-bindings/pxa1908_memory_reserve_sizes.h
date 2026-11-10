@@ -10,7 +10,9 @@
 #define PXA1908_SEC_FTRACE_RESERVE_SIZE 	(5 * SZ_1M)
 #define PXA1908_GC_RESERVE_SIZE 		(SZ_16M)
 #define PXA1908_CM3_SHARED_BUF_SIZE		(512 * SZ_1K)
-#define PXA1908_CMA_RESERVE_SIZE 		(8 * SZ_1M)
+/* 8MB is not enough for the coda7542 HW video decoder's contiguous buffers on N
+ * (720p needs ~9MB, 1080p ~30MB). Unused CMA stays available to movable pages. */
+#define PXA1908_CMA_RESERVE_SIZE 		(64 * SZ_1M)
 
 #define PXA1908_CP_BASE 		(0x05000000)
 #define PXA1908_RAMDISK_BASE		(PXA1908_CP_BASE - PXA1908_RAMDISK_RESERVE_SIZE)
