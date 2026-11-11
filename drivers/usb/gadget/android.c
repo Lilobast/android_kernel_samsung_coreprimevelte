@@ -443,19 +443,53 @@ struct functionfs_config {
 	struct ffs_data *data;
 };
 
+static int functionfs_ready_callback(struct ffs_data *ffs);
+static void functionfs_closed_callback(struct ffs_data *ffs);
+
+/*
+ * The f_fs.c included above is the newer one: a FunctionFS instance can only be mounted once an
+ * ffs_dev is registered for it. Register one "single" device (any mount name, e.g. "adb", maps
+ * to it) whose ready/closed callbacks drive this gadget, like the old f_fs did.
+ */
+static struct ffs_dev *ffs_android_dev;
+
 static int ffs_function_init(struct android_usb_function *f,
 			     struct usb_composite_dev *cdev)
 {
+	struct ffs_dev *dev;
+	int ret;
+
 	f->config = kzalloc(sizeof(struct functionfs_config), GFP_KERNEL);
 	if (!f->config)
 		return -ENOMEM;
 
-	return functionfs_init();
+	ffs_dev_lock();
+	dev = ffs_alloc_dev();	/* registers the filesystem with the first device */
+	if (IS_ERR(dev)) {
+		ffs_dev_unlock();
+		kfree(f->config);
+		f->config = NULL;
+		return PTR_ERR(dev);
+	}
+	dev->ffs_ready_callback = functionfs_ready_callback;
+	dev->ffs_closed_callback = functionfs_closed_callback;
+	ffs_android_dev = dev;
+	ffs_dev_unlock();
+
+	ret = ffs_single_dev(dev);
+	if (ret)
+		pr_err("android_usb: ffs_single_dev failed (%d)\n", ret);
+	return 0;
 }
 
 static void ffs_function_cleanup(struct android_usb_function *f)
 {
-	functionfs_cleanup();
+	if (ffs_android_dev) {
+		ffs_dev_lock();
+		ffs_free_dev(ffs_android_dev);	/* unregisters the filesystem with the last one */
+		ffs_android_dev = NULL;
+		ffs_dev_unlock();
+	}
 	kfree(f->config);
 }
 
@@ -542,7 +576,7 @@ static struct android_usb_function ffs_function = {
 	.attributes	= ffs_function_attributes,
 };
 
-static int __maybe_unused functionfs_ready_callback(struct ffs_data *ffs)
+static int functionfs_ready_callback(struct ffs_data *ffs)
 {
 	struct android_dev *dev = _android_dev;
 	struct functionfs_config *config = ffs_function.config;
@@ -565,7 +599,7 @@ err:
 	return ret;
 }
 
-static void __maybe_unused functionfs_closed_callback(struct ffs_data *ffs)
+static void functionfs_closed_callback(struct ffs_data *ffs)
 {
 	struct android_dev *dev = _android_dev;
 	struct functionfs_config *config = ffs_function.config;
