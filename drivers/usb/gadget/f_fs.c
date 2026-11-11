@@ -1307,6 +1307,19 @@ static void ffs_epfiles_destroy(struct ffs_epfile *epfiles, unsigned count)
 }
 
 
+static int _ffs_func_bind(struct usb_configuration *c,
+			  struct usb_function *f);
+
+/*
+ * Legacy (android.c) binding: functionfs_bind() already ran from the ready callback and there is
+ * no f_fs_opts (f->fi is NULL), so skip ffs_do_functionfs_bind() and just set up the descriptors.
+ */
+static int old_ffs_func_bind(struct usb_configuration *c,
+			     struct usb_function *f)
+{
+	return _ffs_func_bind(c, f);
+}
+
 static int functionfs_bind_config(struct usb_composite_dev *cdev,
 				  struct usb_configuration *c,
 				  struct ffs_data *ffs)
@@ -1323,7 +1336,7 @@ static int functionfs_bind_config(struct usb_composite_dev *cdev,
 	func->function.name    = "Function FS Gadget";
 	func->function.strings = ffs->stringtabs;
 
-	func->function.bind    = ffs_func_bind;
+	func->function.bind    = old_ffs_func_bind;
 	func->function.unbind  = old_ffs_func_unbind;
 	func->function.set_alt = ffs_func_set_alt;
 	func->function.disable = ffs_func_disable;
