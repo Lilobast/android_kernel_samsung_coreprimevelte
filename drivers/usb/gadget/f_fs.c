@@ -569,6 +569,10 @@ static const struct file_operations ffs_ep0_operations = {
 	.read =		ffs_ep0_read,
 	.release =	ffs_ep0_release,
 	.unlocked_ioctl =	ffs_ep0_ioctl,
+#ifdef CONFIG_COMPAT
+	/* integer arguments only (arm64: compat pointers need no translation) */
+	.compat_ioctl =	ffs_ep0_ioctl,
+#endif
 };
 
 
@@ -794,6 +798,10 @@ static const struct file_operations ffs_epfile_operations = {
 	.read =		ffs_epfile_read,
 	.release =	ffs_epfile_release,
 	.unlocked_ioctl =	ffs_epfile_ioctl,
+#ifdef CONFIG_COMPAT
+	/* integer arguments only (arm64: compat pointers need no translation) */
+	.compat_ioctl =	ffs_epfile_ioctl,
+#endif
 };
 
 
