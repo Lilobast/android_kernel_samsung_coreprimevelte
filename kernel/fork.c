@@ -679,6 +679,41 @@ void mmput(struct mm_struct *mm)
 }
 EXPORT_SYMBOL_GPL(mmput);
 
+/*
+ * mmput_async (backport for binder): drop the reference from a work item so a
+ * last mmput never runs exit_mmap in the caller's context (binder shrinker).
+ * Uses a separate allocation instead of a field in mm_struct.
+ */
+struct mmput_async_work {
+	struct work_struct work;
+	struct mm_struct *mm;
+};
+
+static void mmput_async_fn(struct work_struct *work)
+{
+	struct mmput_async_work *w = container_of(work, struct mmput_async_work, work);
+
+	mmput(w->mm);
+	kfree(w);
+}
+
+void mmput_async(struct mm_struct *mm)
+{
+	struct mmput_async_work *w;
+
+	if (atomic_add_unless(&mm->mm_users, -1, 1))
+		return;		/* not the last reference */
+	w = kmalloc(sizeof(*w), GFP_ATOMIC);
+	if (!w) {
+		mmput(mm);
+		return;
+	}
+	INIT_WORK(&w->work, mmput_async_fn);
+	w->mm = mm;
+	schedule_work(&w->work);
+}
+EXPORT_SYMBOL_GPL(mmput_async);
+
 void set_mm_exe_file(struct mm_struct *mm, struct file *new_exe_file)
 {
 	if (new_exe_file)
