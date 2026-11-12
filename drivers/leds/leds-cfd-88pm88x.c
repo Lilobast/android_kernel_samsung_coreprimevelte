@@ -146,6 +146,36 @@ static int gpio_en;
 static unsigned int dev_num;
 static unsigned int delay_flash_timer;
 static int pa_en;
+
+/*
+ * Flash current limits for a worn battery: a full 1200 mA strobe (about 1.3 A
+ * from the battery on top of the camera load) collapses the battery voltage
+ * and resets the phone, because strobe_flash() also disables the booster's
+ * battery-undervoltage cutoff. Both limits can be changed at runtime in
+ * /sys/module/leds_cfd_88pm88x/parameters/.
+ */
+static unsigned int flash_max_ma = 500;
+module_param(flash_max_ma, uint, 0644);
+MODULE_PARM_DESC(flash_max_ma, "Flash strobe current cap in mA");
+static unsigned int flash_low_vbat_mv = 3700;
+module_param(flash_low_vbat_mv, uint, 0644);
+MODULE_PARM_DESC(flash_low_vbat_mv, "Below this battery voltage the flash cap is halved");
+
+static unsigned int flash_current_cap(unsigned int step)
+{
+	struct power_supply *bat = power_supply_get_by_name("battery");
+	union power_supply_propval v;
+	unsigned int cap = flash_max_ma;
+
+	if (bat && bat->get_property &&
+	    !bat->get_property(bat, POWER_SUPPLY_PROP_VOLTAGE_NOW, &v) &&
+	    v.intval > 0 && v.intval / 1000 < flash_low_vbat_mv) {
+		cap /= 2;
+		pr_info("pm88x flash: battery %d mV, flash cap halved\n", v.intval / 1000);
+	}
+	cap -= cap % step;
+	return cap < step ? step : cap;
+}
 struct pm88x_led {
 	struct led_classdev cdev;
 	struct work_struct work;
@@ -416,7 +446,7 @@ static void strobe_flash(struct pm88x_led *led)
 	struct power_supply *psy;
 	union power_supply_propval val;
 	int i, ret, chg_online = 0;
-	unsigned int brightness;
+	unsigned int brightness, cap;
 	chip = led->chip;
 
 	mutex_lock(&led->lock);
@@ -456,6 +486,12 @@ static void strobe_flash(struct pm88x_led *led)
 		psy->set_property(psy, POWER_SUPPLY_PROP_CHARGING_ENABLED, &val);
 	}
 
+	cap = flash_current_cap(led->iset_step);
+	if (led->brightness > cap) {
+		pr_info("pm88x flash: %u mA requested, capped to %u mA\n",
+			led->brightness, cap);
+		led->brightness = cap;
+	}
 	brightness = led->brightness;
 	if (chg_online) {
 		switch (chip->type) {
