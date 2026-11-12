@@ -2218,7 +2218,8 @@ sbi_register_conf_dpc(bt_private *priv)
 				  mbt_dev->name);
 
 		/** chmod & chown for BT char device */
-		mbtchar_chown(dev_file, AID_SYSTEM, AID_NET_BT_STACK);
+		/* Pie: opened by the Bluetooth HAL service (user bluetooth) */
+		mbtchar_chown(dev_file, AID_BLUETOOTH, AID_NET_BT_STACK);
 		mbtchar_chmod(dev_file, 0660);
 
 		/** create proc device */
