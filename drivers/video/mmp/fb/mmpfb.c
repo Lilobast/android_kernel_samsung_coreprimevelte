@@ -626,8 +626,6 @@ static int mmpfb_blank(int blank, struct fb_info *info)
 	struct mmpfb_info *fbi = info->par;
 	struct mmphw_ctrl *ctrl = path_to_ctrl(fbi->path);
 
-	/* bring-up: who blanks/unblanks the panel */
-	pr_info("mmpfb: blank=%d by %s[%d]\n", blank, current->comm, current->pid);
 	if (blank == FB_BLANK_UNBLANK) {
 		pm_runtime_forbid(ctrl->dev);
 		mmpfb_power(fbi, MMP_ON);

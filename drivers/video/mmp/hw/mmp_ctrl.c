@@ -2045,7 +2045,6 @@ static int mmphw_runtime_suspend(struct device *dev)
 	spin_lock_irqsave(&ctrl->common_regs_lock, flags);
 	ctrl->status = MMP_OFF;
 	mmphw_regs_store(ctrl);
-	pr_info("mmphw: LCDC runtime suspend (%s[%d])\n", current->comm, current->pid);
 	spin_unlock_irqrestore(&ctrl->common_regs_lock, flags);
 	mutex_unlock(&ctrl->access_ok);
 
@@ -2067,7 +2066,6 @@ static int mmphw_runtime_resume(struct device *dev)
 	spin_lock_irqsave(&ctrl->common_regs_lock, flags);
 	mmphw_regs_recovery(ctrl);
 	ctrl->status = MMP_ON;
-	pr_info("mmphw: LCDC runtime resume (%s[%d])\n", current->comm, current->pid);
 	spin_unlock_irqrestore(&ctrl->common_regs_lock, flags);
 	mutex_unlock(&ctrl->access_ok);
 
