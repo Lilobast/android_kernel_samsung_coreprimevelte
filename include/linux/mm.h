@@ -5,6 +5,17 @@
 
 #ifdef __KERNEL__
 
+#ifdef CONFIG_ARM64
+extern const int mmap_rnd_bits_min;
+extern const int mmap_rnd_bits_max;
+extern int mmap_rnd_bits;
+#ifdef CONFIG_COMPAT
+extern const int mmap_rnd_compat_bits_min;
+extern const int mmap_rnd_compat_bits_max;
+extern int mmap_rnd_compat_bits;
+#endif
+#endif
+
 #include <linux/mmdebug.h>
 #include <linux/gfp.h>
 #include <linux/bug.h>

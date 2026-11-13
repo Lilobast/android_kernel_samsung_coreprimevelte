@@ -55,14 +55,35 @@ static int mmap_is_legacy(void)
  *
  * To avoid this we can shift the randomness by 1 bit.
  */
+/*
+ * Backport of ARCH_MMAP_RND_BITS (4.5): the number of random bits of the mmap base is
+ * tunable through /proc/sys/vm/mmap_rnd_bits and mmap_rnd_compat_bits. Android 9 init
+ * raises the compat (32-bit) value to 16 bits; it used to be fixed at 10.
+ * 4K pages, 39-bit VA: 18..24 bits native, 11..16 bits compat.
+ */
+const int mmap_rnd_bits_min = 18;
+const int mmap_rnd_bits_max = 24;
+int mmap_rnd_bits __read_mostly = 18;
+#ifdef CONFIG_COMPAT
+const int mmap_rnd_compat_bits_min = 11;
+const int mmap_rnd_compat_bits_max = 16;
+int mmap_rnd_compat_bits __read_mostly = 11;
+#endif
+
 static unsigned long mmap_rnd(void)
 {
 	unsigned long rnd = 0;
 
-	if (current->flags & PF_RANDOMIZE)
-		rnd = (long)get_random_int() & (STACK_RND_MASK >> 1);
+	if (current->flags & PF_RANDOMIZE) {
+#ifdef CONFIG_COMPAT
+		if (test_thread_flag(TIF_32BIT))
+			rnd = get_random_int() & ((1UL << mmap_rnd_compat_bits) - 1);
+		else
+#endif
+			rnd = get_random_int() & ((1UL << mmap_rnd_bits) - 1);
+	}
 
-	return rnd << (PAGE_SHIFT + 1);
+	return rnd << PAGE_SHIFT;
 }
 
 static unsigned long mmap_base(void)
