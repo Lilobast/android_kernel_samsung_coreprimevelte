@@ -494,46 +494,46 @@ static const char *hwcap_str[] = {
 
 static int c_show(struct seq_file *m, void *v)
 {
-	int i;
+	int i, j;
+	u32 midr = read_cpuid_id();
 
+	/*
+	 * One block per CPU, as in later arm64 kernels: apps such as DevCheck count the
+	 * "CPU part" blocks, and the old single shared block made them report one core.
+	 * All cores of the PXA1908 are the same Cortex-A53, so the ID of this CPU is used.
+	 * The old one-line "Processor" header is kept first for older userspace parsers.
+	 */
 	if (is_compat_task())
 		seq_printf(m, "Processor\t: %s rev %d (%s)\n",
-			"ARMv8 Processor", read_cpuid_id() & 15,
-			COMPAT_ELF_PLATFORM);
+			"ARMv8 Processor", midr & 15, COMPAT_ELF_PLATFORM);
 	else
 		seq_printf(m, "Processor\t: %s rev %d (%s)\n",
-			cpu_name, read_cpuid_id() & 15, ELF_PLATFORM);
+			cpu_name, midr & 15, ELF_PLATFORM);
 
 	for_each_online_cpu(i) {
-		/*
-		 * glibc reads /proc/cpuinfo to determine the number of
-		 * online processors, looking for lines beginning with
-		 * "processor".  Give glibc what it expects.
-		 */
-#ifdef CONFIG_SMP
 		seq_printf(m, "processor\t: %d\n", i);
-#endif
+		if (is_compat_task())
+			seq_printf(m, "model name\t: %s rev %d (%s)\n",
+				"ARMv8 Processor", midr & 15, COMPAT_ELF_PLATFORM);
+		else
+			seq_printf(m, "model name\t: %s rev %d (%s)\n",
+				cpu_name, midr & 15, ELF_PLATFORM);
+
+		seq_puts(m, "Features\t: ");
+		for (j = 0; hwcap_str[j]; j++)
+			if (elf_hwcap & (1 << j))
+				seq_printf(m, "%s ", hwcap_str[j]);
+		seq_puts(m, " half thumb fastmult edsp tls vfp vfpv3 vfpv4 neon idiva idivt ");
+
+		seq_printf(m, "\nCPU implementer\t: 0x%02x\n", midr >> 24);
+		if (is_compat_task())
+			seq_puts(m, "CPU architecture: 7\n");
+		else
+			seq_puts(m, "CPU architecture: 8\n");
+		seq_printf(m, "CPU variant\t: 0x%x\n", (midr >> 20) & 15);
+		seq_printf(m, "CPU part\t: 0x%03x\n", (midr >> 4) & 0xfff);
+		seq_printf(m, "CPU revision\t: %d\n\n", midr & 15);
 	}
-
-	/* dump out the processor features */
-	seq_puts(m, "Features\t: ");
-
-	for (i = 0; hwcap_str[i]; i++)
-		if (elf_hwcap & (1 << i))
-			seq_printf(m, "%s ", hwcap_str[i]);
-	seq_puts(m, " half thumb fastmult edsp tls vfp vfpv3 vfpv4 neon idiva idivt ");
-
-	seq_printf(m, "\nCPU implementer\t: 0x%02x\n", read_cpuid_id() >> 24);
-
-	if (is_compat_task())
-		seq_puts(m, "CPU architecture: 7\n");
-	else
-		seq_puts(m, "CPU architecture: 8\n");
-	seq_printf(m, "CPU variant\t: 0x%x\n", (read_cpuid_id() >> 20) & 15);
-	seq_printf(m, "CPU part\t: 0x%03x\n", (read_cpuid_id() >> 4) & 0xfff);
-	seq_printf(m, "CPU revision\t: %d\n", read_cpuid_id() & 15);
-
-	seq_puts(m, "\n");
 
 	seq_printf(m, "Hardware\t: %s\n", machine_name);
 #ifdef CONFIG_MACH_PXA_SAMSUNG
