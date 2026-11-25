@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 /* Helpers the android-3.18 binder needs that kernel 3.14 doesn't have. */
 #ifndef _BINDER_COMPAT_H
 #define _BINDER_COMPAT_H
